@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Proto\httpapi.proto" GrpcServices="Both" />
+    <Compile Include="..\Shared\TestGrpcServiceActivator.cs" Link="Infrastructure\TestGrpcServiceActivator.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+
+    <ProjectReference Include="..\..\src\Microsoft.AspNetCore.Grpc.HttpApi\Microsoft.AspNetCore.Grpc.HttpApi.csproj" />
+
+    <Reference Include="Grpc.Tools" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>

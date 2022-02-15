@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\TestGrpcServiceActivator.cs" Link="Infrastructure\TestGrpcServiceActivator.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+
+    <ProjectReference Include="..\..\src\Microsoft.AspNetCore.Grpc.HttpApi\Microsoft.AspNetCore.Grpc.HttpApi.csproj" />
+    <ProjectReference Include="..\testassets\IntegrationTestsWebsite\IntegrationTestsWebsite.csproj" />
+
+    <Reference Include="Microsoft.AspNetCore.TestHost" />
+    <Reference Include="Grpc.Tools" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>

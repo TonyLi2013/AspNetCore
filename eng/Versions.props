@@ -237,8 +237,10 @@
     <CastleCoreVersion>4.2.1</CastleCoreVersion>
     <CommandLineParserVersion>2.3.0</CommandLineParserVersion>
     <FSharpCoreVersion>6.0.0</FSharpCoreVersion>
+    <GoogleApiCommonProtosVersion>2.5.0</GoogleApiCommonProtosVersion>
     <GoogleProtobufVersion>3.18.0</GoogleProtobufVersion>
     <GrpcAspNetCoreVersion>2.40.0</GrpcAspNetCoreVersion>
+    <GrpcAspNetCoreServerVersion>2.40.0</GrpcAspNetCoreServerVersion>
     <GrpcAuthVersion>2.40.0</GrpcAuthVersion>
     <GrpcNetClientVersion>2.40.0</GrpcNetClientVersion>
     <GrpcToolsVersion>2.40.0</GrpcToolsVersion>
