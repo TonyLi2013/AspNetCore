@@ -1,10 +1,18 @@
-﻿{
+{
   "solution": {
     "path": "..\\..\\AspNetCore.sln",
-    "projects" : [
+    "projects": [
+      "src\\Grpc\\HttpApi\\perf\\Microsoft.AspNetCore.Grpc.Microbenchmarks\\Microsoft.AspNetCore.Grpc.Microbenchmarks.csproj",
+      "src\\Grpc\\HttpApi\\src\\Microsoft.AspNetCore.Grpc.HttpApi\\Microsoft.AspNetCore.Grpc.HttpApi.csproj",
+      "src\\Grpc\\HttpApi\\src\\Microsoft.AspNetCore.Grpc.Swagger\\Microsoft.AspNetCore.Grpc.Swagger.csproj",
+      "src\\Grpc\\HttpApi\\test\\Microsoft.AspNetCore.Grpc.HttpApi.IntegrationTests\\Microsoft.AspNetCore.Grpc.HttpApi.IntegrationTests.csproj",
+      "src\\Grpc\\HttpApi\\test\\Microsoft.AspNetCore.Grpc.HttpApi.Tests\\Microsoft.AspNetCore.Grpc.HttpApi.Tests.csproj",
+      "src\\Grpc\\HttpApi\\test\\Microsoft.AspNetCore.Grpc.Swagger.Tests\\Microsoft.AspNetCore.Grpc.Swagger.Tests.csproj",
+      "src\\Grpc\\HttpApi\\test\\testassets\\IntegrationTestsWebsite\\IntegrationTestsWebsite.csproj",
+      "src\\Grpc\\HttpApi\\test\\testassets\\Sandbox\\Sandbox.csproj",
       "src\\Grpc\\Interop\\test\\InteropTests\\InteropTests.csproj",
-      "src\\Grpc\\Interop\\test\\testassets\\InteropWebsite\\InteropWebsite.csproj",
       "src\\Grpc\\Interop\\test\\testassets\\InteropClient\\InteropClient.csproj",
+      "src\\Grpc\\Interop\\test\\testassets\\InteropWebsite\\InteropWebsite.csproj",
       "src\\Testing\\src\\Microsoft.AspNetCore.Testing.csproj"
     ]
   }
