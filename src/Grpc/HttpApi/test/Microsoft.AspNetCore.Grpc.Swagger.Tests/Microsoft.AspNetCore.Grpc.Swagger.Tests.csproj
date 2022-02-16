@@ -15,8 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-
     <ProjectReference Include="..\..\src\Microsoft.AspNetCore.Grpc.Swagger\Microsoft.AspNetCore.Grpc.Swagger.csproj" />
 
     <Reference Include="Grpc.Tools" PrivateAssets="All" />

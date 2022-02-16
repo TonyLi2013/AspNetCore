@@ -20,8 +20,6 @@
   <ItemGroup>
     <Compile Include="..\Shared\ServiceDescriptorHelpers.cs" Link="Internal\Shared\ServiceDescriptorHelpers.cs" />
 
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-
     <ProjectReference Include="..\Microsoft.AspNetCore.Grpc.HttpApi\Microsoft.AspNetCore.Grpc.HttpApi.csproj" />
 
     <Reference Include="Swashbuckle.AspNetCore" />

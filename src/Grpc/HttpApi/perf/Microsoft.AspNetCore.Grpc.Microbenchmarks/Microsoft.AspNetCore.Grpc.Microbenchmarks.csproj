@@ -13,8 +13,6 @@
     <Protobuf Include=".\Proto\chat.proto" GrpcServices="Server" />
     <Protobuf Include=".\Proto\greet.proto" GrpcServices="Client" />
 
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-
     <Reference Include="BenchmarkDotNet" />
     <Reference Include="Google.Protobuf" />
     <Reference Include="Grpc.Tools" PrivateAssets="All" />
