@@ -11,6 +11,9 @@
     <!-- Disable analysis for ConfigureAwait(false) -->
     <WarningsNotAsErrors>$(WarningsNotAsErrors);CA2007</WarningsNotAsErrors>
     <NoWarn>$(NoWarn);CA2007</NoWarn>
+
+    <RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);$(ArtifactsShippingPackagesDir)</RestoreAdditionalProjectSources>
+    <UseAspNetCoreSharedRuntime>true</UseAspNetCoreSharedRuntime>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,7 +33,7 @@
     <Compile Include="..\Shared\Server\UnaryServerMethodInvoker.cs" Link="Internal\Shared\Server\UnaryServerMethodInvoker.cs" />
     <Compile Include="..\Shared\ServiceDescriptorHelpers.cs" Link="Internal\Shared\ServiceDescriptorHelpers.cs" />
 
-    <Protobuf Include="Internal\Protos\errors.proto" />
+    <Protobuf Include="Internal\Protos\errors.proto" Access="Internal" />
   </ItemGroup>
 
   <ItemGroup>

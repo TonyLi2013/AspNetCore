@@ -1,14 +1,12 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
 using BenchmarkDotNet.Configs;
 
-namespace Microsoft.AspNetCore.Grpc.Microbenchmarks
+namespace Microsoft.AspNetCore.Grpc.Microbenchmarks;
+
+[AttributeUsage(AttributeTargets.Assembly)]
+public class DefaultCoreConfigAttribute : Attribute, IConfigSource
 {
-    [AttributeUsage(AttributeTargets.Assembly)]
-    public class DefaultCoreConfigAttribute : Attribute, IConfigSource
-    {
-        public IConfig Config => new DefaultCoreConfig();
-    }
+    public IConfig Config => new DefaultCoreConfig();
 }

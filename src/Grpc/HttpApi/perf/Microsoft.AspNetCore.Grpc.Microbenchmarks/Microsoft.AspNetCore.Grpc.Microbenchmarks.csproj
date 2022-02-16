@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>$(DefaultNetCoreTargetFramework)</TargetFramework>
+    <RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);$(ArtifactsShippingPackagesDir)</RestoreAdditionalProjectSources>
+    <UseAspNetCoreSharedRuntime>true</UseAspNetCoreSharedRuntime>
   </PropertyGroup>
 
   <ItemGroup>

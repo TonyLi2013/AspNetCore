@@ -1,7 +1,6 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
 using System.Linq;
 using System.Reflection;
 using System.Xml.XPath;
@@ -9,94 +8,103 @@ using Grpc.AspNetCore.Server;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace Microsoft.AspNetCore.Grpc.Swagger.Internal.XmlComments
+namespace Microsoft.AspNetCore.Grpc.Swagger.Internal.XmlComments;
+
+internal class GrpcXmlCommentsOperationFilter : IOperationFilter
 {
-    internal class GrpcXmlCommentsOperationFilter : IOperationFilter
+    private readonly XPathNavigator _xmlNavigator;
+
+    public GrpcXmlCommentsOperationFilter(XPathDocument xmlDoc)
     {
-        private readonly XPathNavigator _xmlNavigator;
+        _xmlNavigator = xmlDoc.CreateNavigator();
+    }
 
-        public GrpcXmlCommentsOperationFilter(XPathDocument xmlDoc)
+    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    {
+        var grpcMetadata = context.ApiDescription.ActionDescriptor.EndpointMetadata.OfType<GrpcMethodMetadata>().FirstOrDefault();
+        if (grpcMetadata == null)
         {
-            _xmlNavigator = xmlDoc.CreateNavigator();
+            return;
         }
 
-        public void Apply(OpenApiOperation operation, OperationFilterContext context)
+        var methodInfo = grpcMetadata.ServiceType.GetMethod(grpcMetadata.Method.Name);
+        if (methodInfo == null)
         {
-            var grpcMetadata = context.ApiDescription.ActionDescriptor.EndpointMetadata.OfType<GrpcMethodMetadata>().FirstOrDefault();
-            if (grpcMetadata == null) return;
+            return;
+        }
 
-            var methodInfo = grpcMetadata.ServiceType.GetMethod(grpcMetadata.Method.Name);
-            if (methodInfo == null) return;
+        // If method is from a constructed generic type, look for comments from the generic type method
+        var targetMethod = methodInfo.DeclaringType!.IsConstructedGenericType
+            ? methodInfo.GetUnderlyingGenericTypeMethod()
+            : methodInfo;
 
-            // If method is from a constructed generic type, look for comments from the generic type method
-            var targetMethod = methodInfo.DeclaringType!.IsConstructedGenericType
-                ? methodInfo.GetUnderlyingGenericTypeMethod()
-                : methodInfo;
+        if (targetMethod == null)
+        {
+            return;
+        }
 
-            if (targetMethod == null)
+        // Base service never has response tags.
+        ApplyServiceTags(operation, targetMethod.DeclaringType!);
+
+        if (TryApplyMethodTags(operation, targetMethod))
+        {
+            return;
+        }
+
+        if (targetMethod.IsVirtual && targetMethod.GetBaseDefinition() is { } baseMethod)
+        {
+            if (TryApplyMethodTags(operation, baseMethod))
             {
                 return;
             }
+        }
+    }
 
-            // Base service never has response tags.
-            ApplyServiceTags(operation, targetMethod.DeclaringType!);
+    private void ApplyServiceTags(OpenApiOperation operation, Type controllerType)
+    {
+        var typeMemberName = XmlCommentsNodeNameHelper.GetMemberNameForType(controllerType);
+        var responseNodes = _xmlNavigator.Select($"/doc/members/member[@name='{typeMemberName}']/response");
+        ApplyResponseTags(operation, responseNodes);
+    }
 
-            if (TryApplyMethodTags(operation, targetMethod))
-            {
-                return;
-            }
+    private bool TryApplyMethodTags(OpenApiOperation operation, MethodInfo methodInfo)
+    {
+        var methodMemberName = XmlCommentsNodeNameHelper.GetMemberNameForMethod(methodInfo);
+        var methodNode = _xmlNavigator.SelectSingleNode($"/doc/members/member[@name='{methodMemberName}']");
 
-            if (targetMethod.IsVirtual && targetMethod.GetBaseDefinition() is { } baseMethod)
-            {
-                if (TryApplyMethodTags(operation, baseMethod))
-                {
-                    return;
-                }
-            }
+        if (methodNode == null)
+        {
+            return false;
         }
 
-        private void ApplyServiceTags(OpenApiOperation operation, Type controllerType)
+        var summaryNode = methodNode.SelectSingleNode("summary");
+        if (summaryNode != null)
         {
-            var typeMemberName = XmlCommentsNodeNameHelper.GetMemberNameForType(controllerType);
-            var responseNodes = _xmlNavigator.Select($"/doc/members/member[@name='{typeMemberName}']/response");
-            ApplyResponseTags(operation, responseNodes);
+            operation.Summary = XmlCommentsTextHelper.Humanize(summaryNode.InnerXml);
         }
 
-        private bool TryApplyMethodTags(OpenApiOperation operation, MethodInfo methodInfo)
+        var remarksNode = methodNode.SelectSingleNode("remarks");
+        if (remarksNode != null)
         {
-            var methodMemberName = XmlCommentsNodeNameHelper.GetMemberNameForMethod(methodInfo);
-            var methodNode = _xmlNavigator.SelectSingleNode($"/doc/members/member[@name='{methodMemberName}']");
-
-            if (methodNode == null)
-            {
-                return false;
-            }
-
-            var summaryNode = methodNode.SelectSingleNode("summary");
-            if (summaryNode != null)
-                operation.Summary = XmlCommentsTextHelper.Humanize(summaryNode.InnerXml);
-
-            var remarksNode = methodNode.SelectSingleNode("remarks");
-            if (remarksNode != null)
-                operation.Description = XmlCommentsTextHelper.Humanize(remarksNode.InnerXml);
-
-            var responseNodes = methodNode.Select("response");
-            ApplyResponseTags(operation, responseNodes);
-
-            return true;
+            operation.Description = XmlCommentsTextHelper.Humanize(remarksNode.InnerXml);
         }
 
-        private void ApplyResponseTags(OpenApiOperation operation, XPathNodeIterator responseNodes)
-        {
-            while (responseNodes.MoveNext())
-            {
-                var code = responseNodes.Current!.GetAttribute("code", "");
-                var response = operation.Responses.ContainsKey(code)
-                    ? operation.Responses[code]
-                    : operation.Responses[code] = new OpenApiResponse();
+        var responseNodes = methodNode.Select("response");
+        ApplyResponseTags(operation, responseNodes);
 
-                response.Description = XmlCommentsTextHelper.Humanize(responseNodes.Current.InnerXml);
-            }
+        return true;
+    }
+
+    private static void ApplyResponseTags(OpenApiOperation operation, XPathNodeIterator responseNodes)
+    {
+        while (responseNodes.MoveNext())
+        {
+            var code = responseNodes.Current!.GetAttribute("code", "");
+            var response = operation.Responses.ContainsKey(code)
+                ? operation.Responses[code]
+                : operation.Responses[code] = new OpenApiResponse();
+
+            response.Description = XmlCommentsTextHelper.Humanize(responseNodes.Current.InnerXml);
         }
     }
 }

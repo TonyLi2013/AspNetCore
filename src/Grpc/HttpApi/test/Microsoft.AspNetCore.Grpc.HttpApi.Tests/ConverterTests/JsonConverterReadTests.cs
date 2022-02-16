@@ -1,42 +1,40 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
 using System.Text.Json;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Google.Protobuf.WellKnownTypes;
 using HttpApi;
 using Microsoft.AspNetCore.Grpc.HttpApi.Internal.Json;
-using Xunit;
 using Xunit.Abstractions;
 
-namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
+namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests;
+
+public class JsonConverterReadTests
 {
-    public class JsonConverterReadTests
+    private readonly ITestOutputHelper _output;
+
+    public JsonConverterReadTests(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper _output;
+        _output = output;
+    }
 
-        public JsonConverterReadTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
-        [Fact]
-        public void ReadObjectProperties()
-        {
-            var json = @"{
+    [Fact]
+    public void ReadObjectProperties()
+    {
+        var json = @"{
   ""name"": ""test"",
   ""age"": 1
 }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void RepeatedStrings()
-        {
-            var json = @"{
+    [Fact]
+    public void RepeatedStrings()
+    {
+        var json = @"{
   ""name"": ""test"",
   ""repeatedStrings"": [
     ""One"",
@@ -45,13 +43,13 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
   ]
 }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void DataTypes_DefaultValues()
-        {
-            var json = @"{
+    [Fact]
+    public void DataTypes_DefaultValues()
+    {
+        var json = @"{
   ""singleInt32"": 0,
   ""singleInt64"": ""0"",
   ""singleUint32"": 0,
@@ -70,40 +68,40 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
   ""singleEnum"": ""NESTED_ENUM_UNSPECIFIED""
 }";
 
-            AssertReadJson<HelloRequest.Types.DataTypes>(json);
-        }
+        AssertReadJson<HelloRequest.Types.DataTypes>(json);
+    }
 
-        [Theory]
-        [InlineData(1)]
-        [InlineData(-1)]
-        [InlineData(100)]
-        public void Enum_ReadNumber(int value)
-        {
-            var json = @"{ ""singleEnum"": " + value + " }";
+    [Theory]
+    [InlineData(1)]
+    [InlineData(-1)]
+    [InlineData(100)]
+    public void Enum_ReadNumber(int value)
+    {
+        var json = @"{ ""singleEnum"": " + value + " }";
 
-            AssertReadJson<HelloRequest.Types.DataTypes>(json);
-        }
+        AssertReadJson<HelloRequest.Types.DataTypes>(json);
+    }
 
-        [Fact]
-        public void Timestamp_Nested()
-        {
-            var json = @"{ ""timestampValue"": ""2020-12-01T00:30:00Z"" }";
+    [Fact]
+    public void Timestamp_Nested()
+    {
+        var json = @"{ ""timestampValue"": ""2020-12-01T00:30:00Z"" }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void Duration_Nested()
-        {
-            var json = @"{ ""durationValue"": ""43200s"" }";
+    [Fact]
+    public void Duration_Nested()
+    {
+        var json = @"{ ""durationValue"": ""43200s"" }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void Value_Nested()
-        {
-            var json = @"{
+    [Fact]
+    public void Value_Nested()
+    {
+        var json = @"{
   ""valueValue"": {
     ""enabled"": true,
     ""metadata"": [
@@ -113,13 +111,13 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
   }
 }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void Value_Root()
-        {
-            var json = @"{
+    [Fact]
+    public void Value_Root()
+    {
+        var json = @"{
   ""enabled"": true,
   ""metadata"": [
     ""value1"",
@@ -127,13 +125,13 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
   ]
 }";
 
-            AssertReadJson<Value>(json);
-        }
+        AssertReadJson<Value>(json);
+    }
 
-        [Fact]
-        public void Struct_Nested()
-        {
-            var json = @"{
+    [Fact]
+    public void Struct_Nested()
+    {
+        var json = @"{
   ""structValue"": {
     ""enabled"": true,
     ""metadata"": [
@@ -143,13 +141,13 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
   }
 }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void Struct_Root()
-        {
-            var json = @"{
+    [Fact]
+    public void Struct_Root()
+    {
+        var json = @"{
   ""enabled"": true,
   ""metadata"": [
     ""value1"",
@@ -157,13 +155,13 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
   ]
 }";
 
-            AssertReadJson<Struct>(json);
-        }
+        AssertReadJson<Struct>(json);
+    }
 
-        [Fact]
-        public void ListValue_Nested()
-        {
-            var json = @"{
+    [Fact]
+    public void ListValue_Nested()
+    {
+        var json = @"{
   ""listValue"": [
     true,
     ""value1"",
@@ -171,25 +169,25 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
   ]
 }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void ListValue_Root()
-        {
-            var json = @"[
+    [Fact]
+    public void ListValue_Root()
+    {
+        var json = @"[
   true,
   ""value1"",
   ""value2""
 ]";
 
-            AssertReadJson<ListValue>(json);
-        }
+        AssertReadJson<ListValue>(json);
+    }
 
-        [Fact]
-        public void Int64_ReadNumber()
-        {
-            var json = @"{
+    [Fact]
+    public void Int64_ReadNumber()
+    {
+        var json = @"{
   ""singleInt64"": 1,
   ""singleUint64"": 2,
   ""singleSint64"": 3,
@@ -197,65 +195,65 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
   ""singleSfixed64"": 5
 }";
 
-            AssertReadJson<HelloRequest.Types.DataTypes>(json);
-        }
+        AssertReadJson<HelloRequest.Types.DataTypes>(json);
+    }
 
-        [Fact]
-        public void RepeatedDoubleValues()
-        {
-            var json = @"{
+    [Fact]
+    public void RepeatedDoubleValues()
+    {
+        var json = @"{
   ""repeatedDoubleValues"": [
     1,
     1.1
   ]
 }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void Any()
-        {
-            var json = @"{
+    [Fact]
+    public void Any()
+    {
+        var json = @"{
   ""@type"": ""type.googleapis.com/http_api.HelloRequest"",
   ""name"": ""In any!""
 }";
 
-            var any = AssertReadJson<Any>(json);
-            var helloRequest = any.Unpack<HelloRequest>();
-            Assert.Equal("In any!", helloRequest.Name);
-        }
+        var any = AssertReadJson<Any>(json);
+        var helloRequest = any.Unpack<HelloRequest>();
+        Assert.Equal("In any!", helloRequest.Name);
+    }
 
-        [Fact]
-        public void Any_WellKnownType_Timestamp()
-        {
-            var json = @"{
+    [Fact]
+    public void Any_WellKnownType_Timestamp()
+    {
+        var json = @"{
   ""@type"": ""type.googleapis.com/google.protobuf.Timestamp"",
   ""value"": ""1970-01-01T00:00:00Z""
 }";
 
-            var any = AssertReadJson<Any>(json);
-            var timestamp = any.Unpack<Timestamp>();
-            Assert.Equal(DateTimeOffset.UnixEpoch, timestamp.ToDateTimeOffset());
-        }
+        var any = AssertReadJson<Any>(json);
+        var timestamp = any.Unpack<Timestamp>();
+        Assert.Equal(DateTimeOffset.UnixEpoch, timestamp.ToDateTimeOffset());
+    }
 
-        [Fact]
-        public void Any_WellKnownType_Int32()
-        {
-            var json = @"{
+    [Fact]
+    public void Any_WellKnownType_Int32()
+    {
+        var json = @"{
   ""@type"": ""type.googleapis.com/google.protobuf.Int32Value"",
   ""value"": 2147483647
 }";
 
-            var any = AssertReadJson<Any>(json);
-            var value = any.Unpack<Int32Value>();
-            Assert.Equal(2147483647, value.Value);
-        }
+        var any = AssertReadJson<Any>(json);
+        var value = any.Unpack<Int32Value>();
+        Assert.Equal(2147483647, value.Value);
+    }
 
-        [Fact]
-        public void MapMessages()
-        {
-            var json = @"{
+    [Fact]
+    public void MapMessages()
+    {
+        var json = @"{
   ""mapMessage"": {
     ""name1"": {
       ""subfield"": ""value1""
@@ -266,70 +264,70 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
   }
 }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void MapKeyBool()
-        {
-            var json = @"{
+    [Fact]
+    public void MapKeyBool()
+    {
+        var json = @"{
   ""mapKeybool"": {
     ""true"": ""value1"",
     ""false"": ""value2""
   }
 }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void MapKeyInt()
-        {
-            var json = @"{
+    [Fact]
+    public void MapKeyInt()
+    {
+        var json = @"{
   ""mapKeyint"": {
     ""-1"": ""value1"",
     ""0"": ""value3""
   }
 }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void OneOf_Success()
-        {
-            var json = @"{
+    [Fact]
+    public void OneOf_Success()
+    {
+        var json = @"{
   ""oneofName1"": ""test""
 }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void OneOf_Failure()
-        {
-            var json = @"{
+    [Fact]
+    public void OneOf_Failure()
+    {
+        var json = @"{
   ""oneofName1"": ""test"",
   ""oneofName2"": ""test""
 }";
 
-            AssertReadJsonError<HelloRequest>(json, ex => Assert.Equal("Multiple values specified for oneof oneof_test", ex.Message));
-        }
+        AssertReadJsonError<HelloRequest>(json, ex => Assert.Equal("Multiple values specified for oneof oneof_test", ex.Message));
+    }
 
-        [Fact]
-        public void NullableWrappers_NaN()
-        {
-            var json = @"{
+    [Fact]
+    public void NullableWrappers_NaN()
+    {
+        var json = @"{
   ""doubleValue"": ""NaN""
 }";
 
-            AssertReadJson<HelloRequest.Types.Wrappers>(json);
-        }
+        AssertReadJson<HelloRequest.Types.Wrappers>(json);
+    }
 
-        [Fact]
-        public void NullableWrappers_Null()
-        {
-            var json = @"{
+    [Fact]
+    public void NullableWrappers_Null()
+    {
+        var json = @"{
   ""stringValue"": null,
   ""int32Value"": null,
   ""int64Value"": null,
@@ -341,13 +339,13 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
   ""bytesValue"": null
 }";
 
-            AssertReadJson<HelloRequest.Types.Wrappers>(json);
-        }
+        AssertReadJson<HelloRequest.Types.Wrappers>(json);
+    }
 
-        [Fact]
-        public void NullableWrappers()
-        {
-            var json = @"{
+    [Fact]
+    public void NullableWrappers()
+    {
+        var json = @"{
   ""stringValue"": ""A string"",
   ""int32Value"": 1,
   ""int64Value"": ""2"",
@@ -359,123 +357,122 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
   ""bytesValue"": ""SGVsbG8gd29ybGQ=""
 }";
 
-            AssertReadJson<HelloRequest.Types.Wrappers>(json);
-        }
+        AssertReadJson<HelloRequest.Types.Wrappers>(json);
+    }
 
-        [Fact]
-        public void NullValue_Default_Null()
-        {
-            var json = @"{ ""nullValue"": null }";
+    [Fact]
+    public void NullValue_Default_Null()
+    {
+        var json = @"{ ""nullValue"": null }";
 
-            AssertReadJson<NullValueContainer>(json);
-        }
+        AssertReadJson<NullValueContainer>(json);
+    }
 
-        [Fact]
-        public void NullValue_Default_String()
-        {
-            var json = @"{ ""nullValue"": ""NULL_VALUE"" }";
+    [Fact]
+    public void NullValue_Default_String()
+    {
+        var json = @"{ ""nullValue"": ""NULL_VALUE"" }";
 
-            AssertReadJson<NullValueContainer>(json);
-        }
+        AssertReadJson<NullValueContainer>(json);
+    }
 
-        [Fact]
-        public void NullValue_NonDefaultValue_Int()
-        {
-            var json = @"{ ""nullValue"": 1 }";
+    [Fact]
+    public void NullValue_NonDefaultValue_Int()
+    {
+        var json = @"{ ""nullValue"": 1 }";
 
-            AssertReadJson<NullValueContainer>(json);
-        }
+        AssertReadJson<NullValueContainer>(json);
+    }
 
-        [Fact]
-        public void NullValue_NonDefaultValue_String()
-        {
-            var json = @"{ ""nullValue"": ""MONKEY"" }";
+    [Fact]
+    public void NullValue_NonDefaultValue_String()
+    {
+        var json = @"{ ""nullValue"": ""MONKEY"" }";
 
-            AssertReadJsonError<NullValueContainer>(json, ex => Assert.Equal("Invalid enum value: MONKEY for enum type: google.protobuf.NullValue", ex.Message));
-        }
+        AssertReadJsonError<NullValueContainer>(json, ex => Assert.Equal("Invalid enum value: MONKEY for enum type: google.protobuf.NullValue", ex.Message));
+    }
 
-        [Fact]
-        public void FieldMask_Nested()
-        {
-            var json = @"{ ""fieldMaskValue"": ""value1,value2,value3.nestedValue"" }";
+    [Fact]
+    public void FieldMask_Nested()
+    {
+        var json = @"{ ""fieldMaskValue"": ""value1,value2,value3.nestedValue"" }";
 
-            AssertReadJson<HelloRequest>(json);
-        }
+        AssertReadJson<HelloRequest>(json);
+    }
 
-        [Fact]
-        public void FieldMask_Root()
-        {
-            var json = @"""value1,value2,value3.nestedValue""";
+    [Fact]
+    public void FieldMask_Root()
+    {
+        var json = @"""value1,value2,value3.nestedValue""";
 
-            AssertReadJson<FieldMask>(json);
-        }
+        AssertReadJson<FieldMask>(json);
+    }
 
-        [Fact]
-        public void NullableWrapper_Root_Int32()
-        {
-            var json = @"1";
+    [Fact]
+    public void NullableWrapper_Root_Int32()
+    {
+        var json = @"1";
 
-            AssertReadJson<Int32Value>(json);
-        }
+        AssertReadJson<Int32Value>(json);
+    }
 
-        [Fact]
-        public void NullableWrapper_Root_Int64()
-        {
-            var json = @"""1""";
+    [Fact]
+    public void NullableWrapper_Root_Int64()
+    {
+        var json = @"""1""";
 
-            AssertReadJson<Int64Value>(json);
-        }
+        AssertReadJson<Int64Value>(json);
+    }
 
-        private TValue AssertReadJson<TValue>(string value, JsonSettings? settings = null) where TValue : IMessage, new()
-        {
-            var typeRegistery = TypeRegistry.FromFiles(
-                HelloRequest.Descriptor.File,
-                Timestamp.Descriptor.File);
+    private TValue AssertReadJson<TValue>(string value, JsonSettings? settings = null) where TValue : IMessage, new()
+    {
+        var typeRegistery = TypeRegistry.FromFiles(
+            HelloRequest.Descriptor.File,
+            Timestamp.Descriptor.File);
 
-            var formatter = new JsonParser(new JsonParser.Settings(
-                recursionLimit: int.MaxValue,
-                typeRegistery));
+        var formatter = new JsonParser(new JsonParser.Settings(
+            recursionLimit: int.MaxValue,
+            typeRegistery));
 
-            var objectOld = formatter.Parse<TValue>(value);
+        var objectOld = formatter.Parse<TValue>(value);
 
-            var jsonSerializerOptions = CreateSerializerOptions(settings, typeRegistery);
+        var jsonSerializerOptions = CreateSerializerOptions(settings, typeRegistery);
 
-            var objectNew = JsonSerializer.Deserialize<TValue>(value, jsonSerializerOptions)!;
+        var objectNew = JsonSerializer.Deserialize<TValue>(value, jsonSerializerOptions)!;
 
-            _output.WriteLine("New:");
-            _output.WriteLine(objectNew.ToString());
+        _output.WriteLine("New:");
+        _output.WriteLine(objectNew.ToString());
 
-            _output.WriteLine("Old:");
-            _output.WriteLine(objectOld.ToString());
+        _output.WriteLine("Old:");
+        _output.WriteLine(objectOld.ToString());
 
-            Assert.True(objectNew.Equals(objectOld));
+        Assert.True(objectNew.Equals(objectOld));
 
-            return objectNew;
-        }
+        return objectNew;
+    }
 
-        private void AssertReadJsonError<TValue>(string value, Action<Exception> assertException, JsonSettings? settings = null) where TValue : IMessage, new()
-        {
-            var typeRegistery = TypeRegistry.FromFiles(
-                HelloRequest.Descriptor.File,
-                Timestamp.Descriptor.File);
+    private void AssertReadJsonError<TValue>(string value, Action<Exception> assertException, JsonSettings? settings = null) where TValue : IMessage, new()
+    {
+        var typeRegistery = TypeRegistry.FromFiles(
+            HelloRequest.Descriptor.File,
+            Timestamp.Descriptor.File);
 
-            var jsonSerializerOptions = CreateSerializerOptions(settings, typeRegistery);
+        var jsonSerializerOptions = CreateSerializerOptions(settings, typeRegistery);
 
-            var ex = Assert.ThrowsAny<Exception>(() => JsonSerializer.Deserialize<TValue>(value, jsonSerializerOptions));
-            assertException(ex);
+        var ex = Assert.ThrowsAny<Exception>(() => JsonSerializer.Deserialize<TValue>(value, jsonSerializerOptions));
+        assertException(ex);
 
-            var formatter = new JsonParser(new JsonParser.Settings(
-                recursionLimit: int.MaxValue,
-                typeRegistery));
+        var formatter = new JsonParser(new JsonParser.Settings(
+            recursionLimit: int.MaxValue,
+            typeRegistery));
 
-            ex = Assert.ThrowsAny<Exception>(() => formatter.Parse<TValue>(value));
-            assertException(ex);
-        }
+        ex = Assert.ThrowsAny<Exception>(() => formatter.Parse<TValue>(value));
+        assertException(ex);
+    }
 
-        internal static JsonSerializerOptions CreateSerializerOptions(JsonSettings? settings, TypeRegistry typeRegistery)
-        {
-            var resolvedSettings = settings ?? new JsonSettings { TypeRegistry = typeRegistery };
-            return JsonConverterHelper.CreateSerializerOptions(resolvedSettings);
-        }
+    internal static JsonSerializerOptions CreateSerializerOptions(JsonSettings? settings, TypeRegistry typeRegistery)
+    {
+        var resolvedSettings = settings ?? new JsonSettings { TypeRegistry = typeRegistery };
+        return JsonConverterHelper.CreateSerializerOptions(resolvedSettings);
     }
 }

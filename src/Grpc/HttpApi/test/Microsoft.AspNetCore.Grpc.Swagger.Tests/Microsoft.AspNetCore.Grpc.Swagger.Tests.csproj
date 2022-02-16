@@ -5,6 +5,9 @@
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>1591</NoWarn>
+
+    <RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);$(ArtifactsShippingPackagesDir)</RestoreAdditionalProjectSources>
+    <UseAspNetCoreSharedRuntime>true</UseAspNetCoreSharedRuntime>
   </PropertyGroup>
 
   <ItemGroup>

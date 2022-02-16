@@ -1,53 +1,48 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 
-namespace Server
+namespace Server;
+
+public class Startup
 {
-    public class Startup
+    public void ConfigureServices(IServiceCollection services)
     {
-        public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddGrpc();
-            services.AddGrpcHttpApi();
-            services.AddMvc();
+        services.AddGrpc();
+        services.AddGrpcHttpApi();
+        services.AddMvc();
 
-            #region Secret
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-            });
-            services.AddGrpcSwagger();
-            #endregion
+        #region Secret
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+        });
+        services.AddGrpcSwagger();
+        #endregion
+    }
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        #region Secret
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+        });
+        #endregion
 
-            #region Secret
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-            });
-            #endregion
+        app.UseRouting();
 
-            app.UseRouting();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapGrpcService<HttpApiGreeterService>();
-                endpoints.MapGrpcService<GreeterService>();
-            });
-        }
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapGrpcService<HttpApiGreeterService>();
+            endpoints.MapGrpcService<GreeterService>();
+        });
     }
 }

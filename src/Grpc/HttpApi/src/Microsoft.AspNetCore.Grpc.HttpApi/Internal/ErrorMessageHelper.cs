@@ -1,21 +1,17 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
-using Grpc.Shared;
+namespace Microsoft.AspNetCore.Grpc.HttpApi.Internal;
 
-namespace Microsoft.AspNetCore.Grpc.HttpApi.Internal
+internal static class ErrorMessageHelper
 {
-    internal static class ErrorMessageHelper
+    internal static string BuildErrorMessage(string message, Exception exception, bool? includeExceptionDetails)
     {
-        internal static string BuildErrorMessage(string message, Exception exception, bool? includeExceptionDetails)
+        if (includeExceptionDetails ?? false)
         {
-            if (includeExceptionDetails ?? false)
-            {
-                return message + " " + CommonGrpcProtocolHelpers.ConvertToRpcExceptionMessage(exception);
-            }
-
-            return message;
+            return message + " " + CommonGrpcProtocolHelpers.ConvertToRpcExceptionMessage(exception);
         }
+
+        return message;
     }
 }

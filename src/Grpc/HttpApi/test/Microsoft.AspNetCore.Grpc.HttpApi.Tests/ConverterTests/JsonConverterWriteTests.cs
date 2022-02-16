@@ -1,7 +1,6 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
 using System.Text;
 using System.Text.Json;
 using Google.Protobuf;
@@ -9,289 +8,270 @@ using Google.Protobuf.Reflection;
 using Google.Protobuf.WellKnownTypes;
 using HttpApi;
 using Microsoft.AspNetCore.Grpc.HttpApi.Internal.Json;
-using Xunit;
 using Xunit.Abstractions;
 
-namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
+namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests;
+
+public class JsonConverterWriteTests
 {
-    public class JsonConverterWriteTests
+    private readonly ITestOutputHelper _output;
+
+    public JsonConverterWriteTests(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper _output;
+        _output = output;
+    }
 
-        public JsonConverterWriteTests(ITestOutputHelper output)
+    [Fact]
+    public void NonAsciiString()
+    {
+        var helloRequest = new HelloRequest
         {
-            _output = output;
-        }
+            Name = "This is a test 激光這兩個字是甚麼意思 string"
+        };
 
-        [Fact]
-        public void NonAsciiString()
+        AssertWrittenJson(helloRequest, compareRawStrings: true);
+    }
+
+    [Fact]
+    public void RepeatedStrings()
+    {
+        var helloRequest = new HelloRequest
         {
-            var helloRequest = new HelloRequest
+            Name = "test",
+            RepeatedStrings =
             {
-                Name = "This is a test 激光這兩個字是甚麼意思 string"
-            };
+                "One",
+                "Two",
+                "Three"
+            }
+        };
 
-            AssertWrittenJson(helloRequest, compareRawStrings: true);
-        }
+        AssertWrittenJson(helloRequest);
+    }
 
-        [Fact]
-        public void RepeatedStrings()
+    [Fact]
+    public void RepeatedDoubleValues()
+    {
+        var helloRequest = new HelloRequest
         {
-            var helloRequest = new HelloRequest
+            RepeatedDoubleValues =
             {
-                Name = "test",
-                RepeatedStrings =
-                {
-                    "One",
-                    "Two",
-                    "Three"
-                }
-            };
+                1,
+                1.1
+            }
+        };
 
-            AssertWrittenJson(helloRequest);
-        }
+        AssertWrittenJson(helloRequest);
+    }
 
-        [Fact]
-        public void RepeatedDoubleValues()
+    [Fact]
+    public void MapStrings()
+    {
+        var helloRequest = new HelloRequest
         {
-            var helloRequest = new HelloRequest
+            MapStrings =
             {
-                RepeatedDoubleValues =
-                {
-                    1,
-                    1.1
-                }
-            };
+                ["name1"] = "value1",
+                ["name2"] = "value2"
+            }
+        };
 
-            AssertWrittenJson(helloRequest);
-        }
+        AssertWrittenJson(helloRequest);
+    }
 
-        [Fact]
-        public void MapStrings()
+    [Fact]
+    public void MapKeyBool()
+    {
+        var helloRequest = new HelloRequest
         {
-            var helloRequest = new HelloRequest
+            MapKeybool =
             {
-                MapStrings =
-                {
-                    ["name1"] = "value1",
-                    ["name2"] = "value2"
-                }
-            };
+                [true] = "value1",
+                [false] = "value2"
+            }
+        };
 
-            AssertWrittenJson(helloRequest);
-        }
+        AssertWrittenJson(helloRequest);
+    }
 
-        [Fact]
-        public void MapKeyBool()
+    [Fact]
+    public void MapKeyInt()
+    {
+        var helloRequest = new HelloRequest
         {
-            var helloRequest = new HelloRequest
+            MapKeyint =
             {
-                MapKeybool =
-                {
-                    [true] = "value1",
-                    [false] = "value2"
-                }
-            };
+                [-1] = "value1",
+                [0] = "value2",
+                [0] = "value3"
+            }
+        };
 
-            AssertWrittenJson(helloRequest);
-        }
+        AssertWrittenJson(helloRequest);
+    }
 
-        [Fact]
-        public void MapKeyInt()
+    [Fact]
+    public void MapMessages()
+    {
+        var helloRequest = new HelloRequest
         {
-            var helloRequest = new HelloRequest
+            MapMessage =
             {
-                MapKeyint =
-                {
-                    [-1] = "value1",
-                    [0] = "value2",
-                    [0] = "value3"
-                }
-            };
+                ["name1"] = new HelloRequest.Types.SubMessage { Subfield = "value1" },
+                ["name2"] = new HelloRequest.Types.SubMessage { Subfield = "value2" }
+            }
+        };
 
-            AssertWrittenJson(helloRequest);
-        }
+        AssertWrittenJson(helloRequest);
+    }
 
-        [Fact]
-        public void MapMessages()
+    [Fact]
+    public void DataTypes_DefaultValues()
+    {
+        var wrappers = new HelloRequest.Types.DataTypes();
+
+        AssertWrittenJson(wrappers, new JsonSettings { FormatDefaultValues = true });
+    }
+
+    [Fact]
+    public void NullableWrappers_NaN()
+    {
+        var wrappers = new HelloRequest.Types.Wrappers
         {
-            var helloRequest = new HelloRequest
-            {
-                MapMessage =
-                {
-                    ["name1"] = new HelloRequest.Types.SubMessage { Subfield = "value1" },
-                    ["name2"] = new HelloRequest.Types.SubMessage { Subfield = "value2" }
-                }
-            };
+            DoubleValue = double.NaN
+        };
 
-            AssertWrittenJson(helloRequest);
-        }
+        AssertWrittenJson(wrappers);
+    }
 
-        [Fact]
-        public void DataTypes_DefaultValues()
+    [Fact]
+    public void NullValue_Default()
+    {
+        var m = new NullValueContainer();
+
+        AssertWrittenJson(m, new JsonSettings { FormatDefaultValues = true });
+    }
+
+    [Fact]
+    public void NullValue_NonDefaultValue()
+    {
+        var m = new NullValueContainer
         {
-            var wrappers = new HelloRequest.Types.DataTypes();
+            NullValue = (NullValue)1
+        };
 
-            AssertWrittenJson(wrappers, new JsonSettings { FormatDefaultValues = true });
-        }
+        AssertWrittenJson(m, new JsonSettings { FormatDefaultValues = true });
+    }
 
-        [Fact]
-        public void NullableWrappers_NaN()
+    [Fact]
+    public void NullableWrappers()
+    {
+        var wrappers = new HelloRequest.Types.Wrappers
         {
-            var wrappers = new HelloRequest.Types.Wrappers
-            {
-                DoubleValue = double.NaN
-            };
+            BoolValue = true,
+            BytesValue = ByteString.CopyFrom(Encoding.UTF8.GetBytes("Hello world")),
+            DoubleValue = 1.1,
+            FloatValue = 1.2f,
+            Int32Value = 1,
+            Int64Value = 2L,
+            StringValue = "A string",
+            Uint32Value = 3U,
+            Uint64Value = 4UL
+        };
 
-            AssertWrittenJson(wrappers);
-        }
+        AssertWrittenJson(wrappers);
+    }
 
-        [Fact]
-        public void NullValue_Default()
+    [Fact]
+    public void NullableWrapper_Root_Int32()
+    {
+        var v = new Int32Value { Value = 1 };
+
+        AssertWrittenJson(v);
+    }
+
+    [Fact]
+    public void NullableWrapper_Root_Int64()
+    {
+        var v = new Int64Value { Value = 1 };
+
+        AssertWrittenJson(v);
+    }
+
+    [Fact]
+    public void Any()
+    {
+        var helloRequest = new HelloRequest
         {
-            var m = new NullValueContainer();
+            Name = "In any!"
+        };
+        var any = Google.Protobuf.WellKnownTypes.Any.Pack(helloRequest);
 
-            AssertWrittenJson(m, new JsonSettings { FormatDefaultValues = true });
-        }
+        AssertWrittenJson(any);
+    }
 
-        [Fact]
-        public void NullValue_NonDefaultValue()
+    [Fact]
+    public void Any_WellKnownType_Timestamp()
+    {
+        var timestamp = Timestamp.FromDateTimeOffset(DateTimeOffset.UnixEpoch);
+        var any = Google.Protobuf.WellKnownTypes.Any.Pack(timestamp);
+
+        AssertWrittenJson(any);
+    }
+
+    [Fact]
+    public void Any_WellKnownType_Int32()
+    {
+        var value = new Int32Value() { Value = int.MaxValue };
+        var any = Google.Protobuf.WellKnownTypes.Any.Pack(value);
+
+        AssertWrittenJson(any);
+    }
+
+    [Fact]
+    public void Timestamp_Nested()
+    {
+        var helloRequest = new HelloRequest
         {
-            var m = new NullValueContainer
-            {
-                NullValue = (NullValue)1
-            };
+            TimestampValue = Timestamp.FromDateTimeOffset(new DateTimeOffset(2020, 12, 1, 12, 30, 0, TimeSpan.FromHours(12)))
+        };
 
-            AssertWrittenJson(m, new JsonSettings { FormatDefaultValues = true });
-        }
+        AssertWrittenJson(helloRequest);
+    }
 
-        [Fact]
-        public void NullableWrappers()
+    [Fact]
+    public void Timestamp_Root()
+    {
+        var ts = Timestamp.FromDateTimeOffset(new DateTimeOffset(2020, 12, 1, 12, 30, 0, TimeSpan.FromHours(12)));
+
+        AssertWrittenJson(ts);
+    }
+
+    [Fact]
+    public void Duration_Nested()
+    {
+        var helloRequest = new HelloRequest
         {
-            var wrappers = new HelloRequest.Types.Wrappers
-            {
-                BoolValue = true,
-                BytesValue = ByteString.CopyFrom(Encoding.UTF8.GetBytes("Hello world")),
-                DoubleValue = 1.1,
-                FloatValue = 1.2f,
-                Int32Value = 1,
-                Int64Value = 2L,
-                StringValue = "A string",
-                Uint32Value = 3U,
-                Uint64Value = 4UL
-            };
+            DurationValue = Duration.FromTimeSpan(TimeSpan.FromHours(12))
+        };
 
-            AssertWrittenJson(wrappers);
-        }
+        AssertWrittenJson(helloRequest);
+    }
 
-        [Fact]
-        public void NullableWrapper_Root_Int32()
+    [Fact]
+    public void Duration_Root()
+    {
+        var duration = Duration.FromTimeSpan(TimeSpan.FromHours(12));
+
+        AssertWrittenJson(duration);
+    }
+
+    [Fact]
+    public void Value_Nested()
+    {
+        var helloRequest = new HelloRequest
         {
-            var v = new Int32Value { Value = 1 };
-
-            AssertWrittenJson(v);
-        }
-
-        [Fact]
-        public void NullableWrapper_Root_Int64()
-        {
-            var v = new Int64Value { Value = 1 };
-
-            AssertWrittenJson(v);
-        }
-
-        [Fact]
-        public void Any()
-        {
-            var helloRequest = new HelloRequest
-            {
-                Name = "In any!"
-            };
-            var any = Google.Protobuf.WellKnownTypes.Any.Pack(helloRequest);
-
-            AssertWrittenJson(any);
-        }
-
-        [Fact]
-        public void Any_WellKnownType_Timestamp()
-        {
-            var timestamp = Timestamp.FromDateTimeOffset(DateTimeOffset.UnixEpoch);
-            var any = Google.Protobuf.WellKnownTypes.Any.Pack(timestamp);
-
-            AssertWrittenJson(any);
-        }
-
-        [Fact]
-        public void Any_WellKnownType_Int32()
-        {
-            var value = new Int32Value() { Value = int.MaxValue };
-            var any = Google.Protobuf.WellKnownTypes.Any.Pack(value);
-
-            AssertWrittenJson(any);
-        }
-
-        [Fact]
-        public void Timestamp_Nested()
-        {
-            var helloRequest = new HelloRequest
-            {
-                TimestampValue = Timestamp.FromDateTimeOffset(new DateTimeOffset(2020, 12, 1, 12, 30, 0, TimeSpan.FromHours(12)))
-            };
-
-            AssertWrittenJson(helloRequest);
-        }
-
-        [Fact]
-        public void Timestamp_Root()
-        {
-            var ts = Timestamp.FromDateTimeOffset(new DateTimeOffset(2020, 12, 1, 12, 30, 0, TimeSpan.FromHours(12)));
-
-            AssertWrittenJson(ts);
-        }
-
-        [Fact]
-        public void Duration_Nested()
-        {
-            var helloRequest = new HelloRequest
-            {
-                DurationValue = Duration.FromTimeSpan(TimeSpan.FromHours(12))
-            };
-
-            AssertWrittenJson(helloRequest);
-        }
-
-        [Fact]
-        public void Duration_Root()
-        {
-            var duration = Duration.FromTimeSpan(TimeSpan.FromHours(12));
-
-            AssertWrittenJson(duration);
-        }
-
-        [Fact]
-        public void Value_Nested()
-        {
-            var helloRequest = new HelloRequest
-            {
-                ValueValue = Value.ForStruct(new Struct
-                {
-                    Fields =
-                    {
-                        ["enabled"] = Value.ForBool(true),
-                        ["metadata"] = Value.ForList(
-                            Value.ForString("value1"),
-                            Value.ForString("value2"))
-                    }
-                })
-            };
-
-            AssertWrittenJson(helloRequest);
-        }
-
-        [Fact]
-        public void Value_Root()
-        {
-            var value = Value.ForStruct(new Struct
+            ValueValue = Value.ForStruct(new Struct
             {
                 Fields =
                 {
@@ -300,35 +280,35 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
                         Value.ForString("value1"),
                         Value.ForString("value2"))
                 }
-            });
+            })
+        };
 
-            AssertWrittenJson(value);
-        }
+        AssertWrittenJson(helloRequest);
+    }
 
-        [Fact]
-        public void Struct_Nested()
+    [Fact]
+    public void Value_Root()
+    {
+        var value = Value.ForStruct(new Struct
         {
-            var helloRequest = new HelloRequest
+            Fields =
             {
-                StructValue = new Struct
-                {
-                    Fields =
-                    {
-                        ["enabled"] = Value.ForBool(true),
-                        ["metadata"] = Value.ForList(
-                            Value.ForString("value1"),
-                            Value.ForString("value2"))
-                    }
-                }
-            };
+                ["enabled"] = Value.ForBool(true),
+                ["metadata"] = Value.ForList(
+                    Value.ForString("value1"),
+                    Value.ForString("value2"))
+            }
+        });
 
-            AssertWrittenJson(helloRequest);
-        }
+        AssertWrittenJson(value);
+    }
 
-        [Fact]
-        public void Struct_Root()
+    [Fact]
+    public void Struct_Nested()
+    {
+        var helloRequest = new HelloRequest
         {
-            var value = new Struct
+            StructValue = new Struct
             {
                 Fields =
                 {
@@ -337,34 +317,35 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
                         Value.ForString("value1"),
                         Value.ForString("value2"))
                 }
-            };
+            }
+        };
 
-            AssertWrittenJson(value);
-        }
+        AssertWrittenJson(helloRequest);
+    }
 
-        [Fact]
-        public void ListValue_Nested()
+    [Fact]
+    public void Struct_Root()
+    {
+        var value = new Struct
         {
-            var helloRequest = new HelloRequest
+            Fields =
             {
-                ListValue = new ListValue
-                {
-                    Values =
-                    {
-                        Value.ForBool(true),
-                        Value.ForString("value1"),
-                        Value.ForString("value2")
-                    }
-                }
-            };
+                ["enabled"] = Value.ForBool(true),
+                ["metadata"] = Value.ForList(
+                    Value.ForString("value1"),
+                    Value.ForString("value2"))
+            }
+        };
 
-            AssertWrittenJson(helloRequest);
-        }
+        AssertWrittenJson(value);
+    }
 
-        [Fact]
-        public void ListValue_Root()
+    [Fact]
+    public void ListValue_Nested()
+    {
+        var helloRequest = new HelloRequest
         {
-            var value = new ListValue
+            ListValue = new ListValue
             {
                 Values =
                 {
@@ -372,97 +353,113 @@ namespace Microsoft.AspNetCore.Grpc.HttpApi.Tests.ConverterTests
                     Value.ForString("value1"),
                     Value.ForString("value2")
                 }
-            };
+            }
+        };
 
-            AssertWrittenJson(value);
-        }
+        AssertWrittenJson(helloRequest);
+    }
 
-        [Fact]
-        public void FieldMask_Nested()
+    [Fact]
+    public void ListValue_Root()
+    {
+        var value = new ListValue
         {
-            var helloRequest = new HelloRequest
+            Values =
             {
-                FieldMaskValue = FieldMask.FromString("value1,value2,value3.nested_value"),
-            };
+                Value.ForBool(true),
+                Value.ForString("value1"),
+                Value.ForString("value2")
+            }
+        };
 
-            AssertWrittenJson(helloRequest);
-        }
+        AssertWrittenJson(value);
+    }
 
-        [Fact]
-        public void FieldMask_Root()
+    [Fact]
+    public void FieldMask_Nested()
+    {
+        var helloRequest = new HelloRequest
         {
-            var m = FieldMask.FromString("value1,value2,value3.nested_value");
+            FieldMaskValue = FieldMask.FromString("value1,value2,value3.nested_value"),
+        };
 
-            AssertWrittenJson(m);
-        }
+        AssertWrittenJson(helloRequest);
+    }
 
-        [Theory]
-        [InlineData(HelloRequest.Types.DataTypes.Types.NestedEnum.Unspecified)]
-        [InlineData(HelloRequest.Types.DataTypes.Types.NestedEnum.Bar)]
-        [InlineData(HelloRequest.Types.DataTypes.Types.NestedEnum.Neg)]
-        [InlineData((HelloRequest.Types.DataTypes.Types.NestedEnum)100)]
-        public void Enum(HelloRequest.Types.DataTypes.Types.NestedEnum value)
+    [Fact]
+    public void FieldMask_Root()
+    {
+        var m = FieldMask.FromString("value1,value2,value3.nested_value");
+
+        AssertWrittenJson(m);
+    }
+
+    [Theory]
+    [InlineData(HelloRequest.Types.DataTypes.Types.NestedEnum.Unspecified)]
+    [InlineData(HelloRequest.Types.DataTypes.Types.NestedEnum.Bar)]
+    [InlineData(HelloRequest.Types.DataTypes.Types.NestedEnum.Neg)]
+    [InlineData((HelloRequest.Types.DataTypes.Types.NestedEnum)100)]
+    public void Enum(HelloRequest.Types.DataTypes.Types.NestedEnum value)
+    {
+        var dataTypes = new HelloRequest.Types.DataTypes
         {
-            var dataTypes = new HelloRequest.Types.DataTypes
-            {
-                SingleEnum = value
-            };
+            SingleEnum = value
+        };
 
-            AssertWrittenJson(dataTypes);
-        }
+        AssertWrittenJson(dataTypes);
+    }
 
-        [Theory]
-        [InlineData(HelloRequest.Types.DataTypes.Types.NestedEnum.Unspecified)]
-        [InlineData(HelloRequest.Types.DataTypes.Types.NestedEnum.Bar)]
-        [InlineData(HelloRequest.Types.DataTypes.Types.NestedEnum.Neg)]
-        [InlineData((HelloRequest.Types.DataTypes.Types.NestedEnum)100)]
-        public void Enum_WriteNumber(HelloRequest.Types.DataTypes.Types.NestedEnum value)
+    [Theory]
+    [InlineData(HelloRequest.Types.DataTypes.Types.NestedEnum.Unspecified)]
+    [InlineData(HelloRequest.Types.DataTypes.Types.NestedEnum.Bar)]
+    [InlineData(HelloRequest.Types.DataTypes.Types.NestedEnum.Neg)]
+    [InlineData((HelloRequest.Types.DataTypes.Types.NestedEnum)100)]
+    public void Enum_WriteNumber(HelloRequest.Types.DataTypes.Types.NestedEnum value)
+    {
+        var dataTypes = new HelloRequest.Types.DataTypes
         {
-            var dataTypes = new HelloRequest.Types.DataTypes
-            {
-                SingleEnum = value
-            };
+            SingleEnum = value
+        };
 
-            AssertWrittenJson(dataTypes, new JsonSettings { FormatEnumsAsIntegers = true, FormatDefaultValues = false });
-        }
+        AssertWrittenJson(dataTypes, new JsonSettings { FormatEnumsAsIntegers = true, FormatDefaultValues = false });
+    }
 
-        private void AssertWrittenJson<TValue>(TValue value, JsonSettings? settings = null, bool? compareRawStrings = null) where TValue : IMessage
-        {
-            var typeRegistery = TypeRegistry.FromFiles(
-                HelloRequest.Descriptor.File,
-                Timestamp.Descriptor.File);
+    private void AssertWrittenJson<TValue>(TValue value, JsonSettings? settings = null, bool? compareRawStrings = null) where TValue : IMessage
+    {
+        var typeRegistery = TypeRegistry.FromFiles(
+            HelloRequest.Descriptor.File,
+            Timestamp.Descriptor.File);
 
-            settings = settings ?? new JsonSettings { TypeRegistry = typeRegistery, FormatDefaultValues = false };
+        settings = settings ?? new JsonSettings { TypeRegistry = typeRegistery, FormatDefaultValues = false };
 
-            var jsonSerializerOptions = CreateSerializerOptions(settings, typeRegistery);
+        var jsonSerializerOptions = CreateSerializerOptions(settings, typeRegistery);
 
-            var formatterSettings = new JsonFormatter.Settings(
-                formatDefaultValues: settings.FormatDefaultValues,
-                typeRegistery);
-            formatterSettings = formatterSettings.WithFormatEnumsAsIntegers(settings.FormatEnumsAsIntegers);
-            var formatter = new JsonFormatter(formatterSettings);
+        var formatterSettings = new JsonFormatter.Settings(
+            formatDefaultValues: settings.FormatDefaultValues,
+            typeRegistery);
+        formatterSettings = formatterSettings.WithFormatEnumsAsIntegers(settings.FormatEnumsAsIntegers);
+        var formatter = new JsonFormatter(formatterSettings);
 
-            var jsonOld = formatter.Format(value);
+        var jsonOld = formatter.Format(value);
 
-            _output.WriteLine("Old:");
-            _output.WriteLine(jsonOld);
+        _output.WriteLine("Old:");
+        _output.WriteLine(jsonOld);
 
-            var jsonNew = JsonSerializer.Serialize(value, jsonSerializerOptions);
+        var jsonNew = JsonSerializer.Serialize(value, jsonSerializerOptions);
 
-            _output.WriteLine("New:");
-            _output.WriteLine(jsonNew);
+        _output.WriteLine("New:");
+        _output.WriteLine(jsonNew);
 
-            using var doc1 = JsonDocument.Parse(jsonNew);
-            using var doc2 = JsonDocument.Parse(jsonOld);
+        using var doc1 = JsonDocument.Parse(jsonNew);
+        using var doc2 = JsonDocument.Parse(jsonOld);
 
-            var comparer = new JsonElementComparer(maxHashDepth: -1, compareRawStrings: compareRawStrings ?? false);
-            Assert.True(comparer.Equals(doc1.RootElement, doc2.RootElement));
-        }
+        var comparer = new JsonElementComparer(maxHashDepth: -1, compareRawStrings: compareRawStrings ?? false);
+        Assert.True(comparer.Equals(doc1.RootElement, doc2.RootElement));
+    }
 
-        internal static JsonSerializerOptions CreateSerializerOptions(JsonSettings? settings, TypeRegistry typeRegistery)
-        {
-            var resolvedSettings = settings ?? new JsonSettings { TypeRegistry = typeRegistery };
-            return JsonConverterHelper.CreateSerializerOptions(resolvedSettings);
-        }
+    internal static JsonSerializerOptions CreateSerializerOptions(JsonSettings? settings, TypeRegistry typeRegistery)
+    {
+        var resolvedSettings = settings ?? new JsonSettings { TypeRegistry = typeRegistery };
+        return JsonConverterHelper.CreateSerializerOptions(resolvedSettings);
     }
 }

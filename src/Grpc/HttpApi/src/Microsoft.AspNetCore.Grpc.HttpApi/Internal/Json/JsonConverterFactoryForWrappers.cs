@@ -1,51 +1,49 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Google.Protobuf;
 using Type = System.Type;
 
-namespace Microsoft.AspNetCore.Grpc.HttpApi.Internal.Json
+namespace Microsoft.AspNetCore.Grpc.HttpApi.Internal.Json;
+
+internal class JsonConverterFactoryForWrappers : JsonConverterFactory
 {
-    internal class JsonConverterFactoryForWrappers : JsonConverterFactory
+    private readonly JsonSettings _settings;
+
+    public JsonConverterFactoryForWrappers(JsonSettings settings)
     {
-        private readonly JsonSettings _settings;
+        _settings = settings;
+    }
 
-        public JsonConverterFactoryForWrappers(JsonSettings settings)
+    public override bool CanConvert(Type typeToConvert)
+    {
+        if (!typeof(IMessage).IsAssignableFrom(typeToConvert))
         {
-            _settings = settings;
+            return false;
         }
 
-        public override bool CanConvert(Type typeToConvert)
+        var descriptor = JsonConverterHelper.GetMessageDescriptor(typeToConvert);
+        if (descriptor == null)
         {
-            if (!typeof(IMessage).IsAssignableFrom(typeToConvert))
-            {
-                return false;
-            }
-
-            var descriptor = JsonConverterHelper.GetMessageDescriptor(typeToConvert);
-            if (descriptor == null)
-            {
-                return false;
-            }
-
-            return JsonConverterHelper.IsWrapperType(descriptor);
+            return false;
         }
 
-        public override JsonConverter CreateConverter(
-            Type typeToConvert, JsonSerializerOptions options)
-        {
-            var converter = (JsonConverter)Activator.CreateInstance(
-                typeof(WrapperConverter<>).MakeGenericType(new Type[] { typeToConvert }),
-                BindingFlags.Instance | BindingFlags.Public,
-                binder: null,
-                args: new object[] { _settings },
-                culture: null)!;
+        return JsonConverterHelper.IsWrapperType(descriptor);
+    }
 
-            return converter;
-        }
+    public override JsonConverter CreateConverter(
+        Type typeToConvert, JsonSerializerOptions options)
+    {
+        var converter = (JsonConverter)Activator.CreateInstance(
+            typeof(WrapperConverter<>).MakeGenericType(new Type[] { typeToConvert }),
+            BindingFlags.Instance | BindingFlags.Public,
+            binder: null,
+            args: new object[] { _settings },
+            culture: null)!;
+
+        return converter;
     }
 }

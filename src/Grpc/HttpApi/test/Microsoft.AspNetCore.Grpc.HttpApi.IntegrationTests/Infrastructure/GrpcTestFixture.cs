@@ -1,7 +1,6 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
 using System.Net.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -10,87 +9,86 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace Microsoft.AspNetCore.Grpc.HttpApi.IntegrationTests.Infrastructure
+namespace Microsoft.AspNetCore.Grpc.HttpApi.IntegrationTests.Infrastructure;
+
+public class GrpcTestFixture<TStartup> : IDisposable where TStartup : class
 {
-    public class GrpcTestFixture<TStartup> : IDisposable where TStartup : class
+    private TestServer? _server;
+    private IHost? _host;
+    private HttpMessageHandler? _handler;
+    private Action<IWebHostBuilder>? _configureWebHost;
+    private DynamicGrpcServiceRegistry? _dynamicGrpc;
+
+    public event LogMessage? LoggedMessage;
+    public DynamicGrpcServiceRegistry DynamicGrpc
     {
-        private TestServer? _server;
-        private IHost? _host;
-        private HttpMessageHandler? _handler;
-        private Action<IWebHostBuilder>? _configureWebHost;
-        private DynamicGrpcServiceRegistry? _dynamicGrpc;
-
-        public event LogMessage? LoggedMessage;
-        public DynamicGrpcServiceRegistry DynamicGrpc
+        get
         {
-            get
-            {
-                EnsureServer();
-                return _dynamicGrpc!;
-            }
+            EnsureServer();
+            return _dynamicGrpc!;
         }
+    }
 
-        public GrpcTestFixture()
+    public GrpcTestFixture()
+    {
+        LoggerFactory = new LoggerFactory();
+        LoggerFactory.AddProvider(new ForwardingLoggerProvider((logLevel, category, eventId, message, exception) =>
         {
-            LoggerFactory = new LoggerFactory();
-            LoggerFactory.AddProvider(new ForwardingLoggerProvider((logLevel, category, eventId, message, exception) =>
-            {
-                LoggedMessage?.Invoke(logLevel, category, eventId, message, exception);
-            }));
-        }
+            LoggedMessage?.Invoke(logLevel, category, eventId, message, exception);
+        }));
+    }
 
-        public void ConfigureWebHost(Action<IWebHostBuilder> configure)
+    public void ConfigureWebHost(Action<IWebHostBuilder> configure)
+    {
+        _configureWebHost = configure;
+    }
+
+    private void EnsureServer()
+    {
+        if (_host == null)
         {
-            _configureWebHost = configure;
-        }
+            var builder = new HostBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddSingleton<ILoggerFactory>(LoggerFactory);
+                    // Registers a service for tests to add new methods
+                    services.AddSingleton<DynamicGrpcServiceRegistry>();
+                })
+                .ConfigureWebHostDefaults(webHost =>
+                {
+                    webHost
+                        .UseTestServer()
+                        .UseStartup<TStartup>();
 
-        private void EnsureServer()
+                    _configureWebHost?.Invoke(webHost);
+                });
+            _host = builder.Start();
+            _server = _host.GetTestServer();
+            _handler = _server.CreateHandler();
+            _dynamicGrpc = _server.Services.GetRequiredService<DynamicGrpcServiceRegistry>();
+        }
+    }
+
+    public LoggerFactory LoggerFactory { get; }
+
+    public HttpMessageHandler Handler
+    {
+        get
         {
-            if (_host == null)
-            {
-                var builder = new HostBuilder()
-                    .ConfigureServices(services =>
-                    {
-                        services.AddSingleton<ILoggerFactory>(LoggerFactory);
-                        // Registers a service for tests to add new methods
-                        services.AddSingleton<DynamicGrpcServiceRegistry>();
-                    })
-                    .ConfigureWebHostDefaults(webHost =>
-                    {
-                        webHost
-                            .UseTestServer()
-                            .UseStartup<TStartup>();
-
-                        _configureWebHost?.Invoke(webHost);
-                    });
-                _host = builder.Start();
-                _server = _host.GetTestServer();
-                _handler = _server.CreateHandler();
-                _dynamicGrpc = _server.Services.GetRequiredService<DynamicGrpcServiceRegistry>();
-            }
+            EnsureServer();
+            return _handler!;
         }
+    }
 
-        public LoggerFactory LoggerFactory { get; }
+    public void Dispose()
+    {
+        _handler?.Dispose();
+        _host?.Dispose();
+        _server?.Dispose();
+    }
 
-        public HttpMessageHandler Handler
-        {
-            get
-            {
-                EnsureServer();
-                return _handler!;
-            }
-        }
-
-        public void Dispose()
-        {
-            _handler?.Dispose();
-            _host?.Dispose();
-            _server?.Dispose();
-        }
-
-        public IDisposable GetTestContext(ITestOutputHelper outputHelper)
-        {
-            return new GrpcTestContext<TStartup>(this, outputHelper);
-        }
+    public IDisposable GetTestContext(ITestOutputHelper outputHelper)
+    {
+        return new GrpcTestContext<TStartup>(this, outputHelper);
     }
 }
